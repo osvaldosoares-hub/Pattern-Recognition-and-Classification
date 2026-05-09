@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # ─────────────────────────── CONFIGURAÇÕES ──────────────────────────────
 N_REAL    = 20
 TEST_SIZE = 0.2
-KNN_K     = 3
+KNN_K     = 5
 F1, F2    = 0, 2    # pelvic_incidence, lumbar_lordosis_angle
 
 FEAT_NAMES = ['pelvic incidence', 'pelvic tilt', 'lumbar lordosis angle',
@@ -21,7 +21,20 @@ FEAT_NAMES = ['pelvic incidence', 'pelvic tilt', 'lumbar lordosis angle',
 # ─────────────────────────── CLASSIFICADORES ────────────────────────────
 
 class NaiveBayes:
-    """Naive Bayes Gaussiano – atributos independentes entre si."""
+    """
+    Naive Bayes Gaussiano — independência condicional entre atributos.
+
+    Regra de decisão (log-domínio):
+        f(x) = argmax_i [ log P(w_i) + sum_j log p(x_j | w_i) ]
+
+    Verossimilhança Gaussiana univariada por atributo j e classe i:
+        p(x_j | w_i) = 1 / sqrt(2*pi*sigma_ij^2)
+                       * exp( -(x_j - mu_ij)^2 / (2*sigma_ij^2) )
+
+    Parâmetros estimados por MLE no treino:
+        mu_ij    = (1/n_i) * sum_{k in i} x_{kj}
+        sigma_ij = sqrt( (1/n_i) * sum_{k in i} (x_{kj} - mu_ij)^2 )
+    """
 
     def fit(self, X, y):
         self.classes_ = np.unique(y)
@@ -29,11 +42,15 @@ class NaiveBayes:
         self.priors_, self.means_, self.stds_ = {}, {}, {}
         for c in self.classes_:
             mask = (y == c)
+            # P(w_i) = n_i / n
             self.priors_[c] = mask.sum() / n
+            # mu_ij = mean of X[:,j] for class c
             self.means_[c]  = X[mask].mean(axis=0)
+            # sigma_ij = std of X[:,j] for class c  (+eps para estabilidade)
             self.stds_[c]   = X[mask].std(axis=0) + 1e-9
 
     def _log_likelihood(self, x, c):
+        """log p(x|w_i) = sum_j [ -0.5*log(2*pi*s^2) - 0.5*((x_j-mu_j)/s_j)^2 ]"""
         mu, s = self.means_[c], self.stds_[c]
         return np.sum(-0.5 * np.log(2 * np.pi * s**2) - 0.5 * ((x - mu) / s)**2)
 
@@ -52,6 +69,18 @@ class NaiveBayes:
 
 
 class KNN:
+    """
+    K Vizinhos Mais Próximos (KNN).
+
+    Distância Euclidiana entre x e cada amostra de treino x_j:
+        d(x, x_j) = sqrt( sum_l (x_l - x_jl)^2 )
+
+    Classificação por voto majoritário entre os k vizinhos mais próximos:
+        y_hat(x) = argmax_{w_i} sum_{j in N_k(x)} 1[ y_j == w_i ]
+
+    onde N_k(x) é o conjunto dos índices dos k vizinhos mais próximos.
+    """
+
     def __init__(self, k=5):
         self.k = k
 
@@ -61,6 +90,7 @@ class KNN:
     def predict(self, X):
         preds = []
         for x in X:
+            # d(x, x_j) = ||x - x_j||_2
             d    = np.sqrt(((self.X_ - x)**2).sum(axis=1))
             lbls = self.y_[np.argsort(d)[:self.k]]
             vals, cnt = np.unique(lbls, return_counts=True)
@@ -69,13 +99,25 @@ class KNN:
 
 
 class DMC:
+    """
+    Classificador de Distância Mínima ao Centróide (DMC).
+
+    Centróide de cada classe i estimado no treino:
+        c_i = (1/n_i) * sum_{k=1}^{n_i} x_k^(i)
+
+    Classificação: classe cujo centróide é mais próximo em distância Euclidiana:
+        y_hat(x) = argmin_{w_i} ||x - c_i||_2
+    """
+
     def fit(self, X, y):
         self.classes_   = np.unique(y)
+        # c_i = mean de todas as amostras da classe i
         self.centroids_ = {c: X[y == c].mean(axis=0) for c in self.classes_}
 
     def predict(self, X):
         preds = []
         for x in X:
+            # d(x, c_i) = ||x - c_i||_2
             d = {c: np.sqrt(((x - self.centroids_[c])**2).sum()) for c in self.classes_}
             preds.append(min(d, key=d.get))
         return np.array(preds)
@@ -84,6 +126,7 @@ class DMC:
 # ─────────────────────────── UTILITÁRIOS ────────────────────────────────
 
 def stratified_split(X, y, test_size, rng):
+    """Divisão estratificada: preserva a proporção de classes em treino e teste."""
     tr, te = [], []
     for c in np.unique(y):
         idx = np.where(y == c)[0]
@@ -94,10 +137,12 @@ def stratified_split(X, y, test_size, rng):
 
 
 def accuracy(y_true, y_pred):
+    """Acurácia: a = (1/N) * sum_i 1[y_true_i == y_pred_i]"""
     return float(np.mean(y_true == y_pred))
 
 
 def confusion_matrix(y_true, y_pred, classes):
+    """Matriz de confusão C[i,j] = número de amostras da classe i preditas como j."""
     idx = {c: i for i, c in enumerate(classes)}
     cm  = np.zeros((len(classes), len(classes)), dtype=int)
     for t, p in zip(y_true, y_pred):
@@ -106,6 +151,11 @@ def confusion_matrix(y_true, y_pred, classes):
 
 
 def normalize(X_tr, X_te):
+    """
+    Normalização z-score estimada no treino e aplicada a treino e teste:
+        x_norm = (x - mu_tr) / sigma_tr
+    Evita data leakage: mu e sigma calculados apenas sobre X_tr.
+    """
     mu, s = X_tr.mean(0), X_tr.std(0) + 1e-9
     return (X_tr - mu) / s, (X_te - mu) / s
 
