@@ -1,15 +1,9 @@
-"""Classificador Naive Bayes, KNN e DMC - Coluna Vertebral
-Dataset: column_3C.dat  (310 amostras, 6 atributos, 3 classes).
-Classes: Hernia (H), Spondylolisthesis (S), Normal (N).
-Superfície de decisão e gaussianas: pelvic_incidence (f0) x lumbar_lordosis_angle (f2).
-"""
-
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# ─────────────────────────── CONFIGURAÇÕES ──────────────────────────────
+
 N_REAL    = 20
 TEST_SIZE = 0.2
 KNN_K     = 5
@@ -18,24 +12,9 @@ F1, F2    = 0, 2    # pelvic_incidence, lumbar_lordosis_angle
 FEAT_NAMES = ['pelvic incidence', 'pelvic tilt', 'lumbar lordosis angle',
               'sacral slope', 'pelvic radius', 'degree spondylolisthesis']
 
-# ─────────────────────────── CLASSIFICADORES ────────────────────────────
 
 class NaiveBayes:
-    """
-    Naive Bayes Gaussiano — independência condicional entre atributos.
-
-    Regra de decisão (log-domínio):
-        f(x) = argmax_i [ log P(w_i) + sum_j log p(x_j | w_i) ]
-
-    Verossimilhança Gaussiana univariada por atributo j e classe i:
-        p(x_j | w_i) = 1 / sqrt(2*pi*sigma_ij^2)
-                       * exp( -(x_j - mu_ij)^2 / (2*sigma_ij^2) )
-
-    Parâmetros estimados por MLE no treino:
-        mu_ij    = (1/n_i) * sum_{k in i} x_{kj}
-        sigma_ij = sqrt( (1/n_i) * sum_{k in i} (x_{kj} - mu_ij)^2 )
-    """
-
+  
     def fit(self, X, y):
         self.classes_ = np.unique(y)
         n = len(y)
@@ -50,7 +29,7 @@ class NaiveBayes:
             self.stds_[c]   = X[mask].std(axis=0) + 1e-9
 
     def _log_likelihood(self, x, c):
-        """log p(x|w_i) = sum_j [ -0.5*log(2*pi*s^2) - 0.5*((x_j-mu_j)/s_j)^2 ]"""
+    
         mu, s = self.means_[c], self.stds_[c]
         return np.sum(-0.5 * np.log(2 * np.pi * s**2) - 0.5 * ((x - mu) / s)**2)
 
@@ -69,17 +48,7 @@ class NaiveBayes:
 
 
 class KNN:
-    """
-    K Vizinhos Mais Próximos (KNN).
-
-    Distância Euclidiana entre x e cada amostra de treino x_j:
-        d(x, x_j) = sqrt( sum_l (x_l - x_jl)^2 )
-
-    Classificação por voto majoritário entre os k vizinhos mais próximos:
-        y_hat(x) = argmax_{w_i} sum_{j in N_k(x)} 1[ y_j == w_i ]
-
-    onde N_k(x) é o conjunto dos índices dos k vizinhos mais próximos.
-    """
+   
 
     def __init__(self, k=5):
         self.k = k
@@ -99,15 +68,7 @@ class KNN:
 
 
 class DMC:
-    """
-    Classificador de Distância Mínima ao Centróide (DMC).
-
-    Centróide de cada classe i estimado no treino:
-        c_i = (1/n_i) * sum_{k=1}^{n_i} x_k^(i)
-
-    Classificação: classe cujo centróide é mais próximo em distância Euclidiana:
-        y_hat(x) = argmin_{w_i} ||x - c_i||_2
-    """
+    
 
     def fit(self, X, y):
         self.classes_   = np.unique(y)
@@ -123,7 +84,7 @@ class DMC:
         return np.array(preds)
 
 
-# ─────────────────────────── UTILITÁRIOS ────────────────────────────────
+
 
 def stratified_split(X, y, test_size, rng):
     """Divisão estratificada: preserva a proporção de classes em treino e teste."""
@@ -160,7 +121,6 @@ def normalize(X_tr, X_te):
     return (X_tr - mu) / s, (X_te - mu) / s
 
 
-# ─────────────────────────── PLOTS ──────────────────────────────────────
 
 def plot_cm(cm, names, title, ax):
     ax.imshow(cm, cmap='Blues')
@@ -231,7 +191,6 @@ def plot_gaussians(X, y, tr_idx, te_idx, f1, f2, fnames, cnames, ax, title):
     ax.set_title(title, fontsize=10); ax.legend(fontsize=8)
 
 
-# ─────────────────────────── DATASET ────────────────────────────────────
 
 def load_data():
     data = []
@@ -252,8 +211,6 @@ def load_data():
     y = np.array([label_map.get(v, v) for v in y_raw])
     return X, y
 
-
-# ─────────────────────────── MAIN ───────────────────────────────────────
 
 def main():
     print("=" * 60)

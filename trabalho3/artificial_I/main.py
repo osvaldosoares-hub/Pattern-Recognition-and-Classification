@@ -1,13 +1,10 @@
-"""Classificador Naive Bayes, KNN e DMC - Conjunto Artificial I
-Dataset gerado artificialmente com 3 classes (Gaussianas 2D).
-"""
 
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# ─────────────────────────── CONFIGURAÇÕES ──────────────────────────────
+
 N_REAL       = 20
 TEST_SIZE    = 0.2
 KNN_K        = 5
@@ -16,23 +13,10 @@ F1, F2       = 0, 1
 FEAT_NAMES   = ['Atributo 1', 'Atributo 2']
 CLASS_NAMES  = ['Classe 0', 'Classe 1', 'Classe 2']
 
-# ─────────────────────────── CLASSIFICADORES ────────────────────────────
+
 
 class NaiveBayes:
-    """
-    Naive Bayes Gaussiano — independência condicional entre atributos.
-
-    Regra de decisão (log-domínio):
-        f(x) = argmax_i [ log P(w_i) + sum_j log p(x_j | w_i) ]
-
-    Verossimilhança Gaussiana univariada por atributo j e classe i:
-        p(x_j | w_i) = 1 / sqrt(2*pi*sigma_ij^2)
-                       * exp( -(x_j - mu_ij)^2 / (2*sigma_ij^2) )
-
-    Parâmetros estimados por MLE no treino:
-        mu_ij    = (1/n_i) * sum_{k in i} x_{kj}
-        sigma_ij = sqrt( (1/n_i) * sum_{k in i} (x_{kj} - mu_ij)^2 )
-    """
+   
 
     def fit(self, X, y):
         self.classes_ = np.unique(y)
@@ -68,17 +52,7 @@ class NaiveBayes:
 
 
 class KNN:
-    """
-    K Vizinhos Mais Próximos (KNN).
-
-    Distância Euclidiana entre x e cada amostra de treino x_j:
-        d(x, x_j) = sqrt( sum_l (x_l - x_jl)^2 )
-
-    Classificação por voto majoritário entre os k vizinhos mais próximos:
-        y_hat(x) = argmax_{w_i} sum_{j in N_k(x)} 1[ y_j == w_i ]
-
-    onde N_k(x) é o conjunto dos índices dos k vizinhos mais próximos.
-    """
+   
 
     def __init__(self, k=5):
         self.k = k
@@ -98,15 +72,7 @@ class KNN:
 
 
 class DMC:
-    """
-    Classificador de Distância Mínima ao Centróide (DMC).
-
-    Centróide de cada classe i estimado no treino:
-        c_i = (1/n_i) * sum_{k=1}^{n_i} x_k^(i)
-
-    Classificação: classe cujo centróide é mais próximo em distância Euclidiana:
-        y_hat(x) = argmin_{w_i} ||x - c_i||_2
-    """
+   
 
     def fit(self, X, y):
         self.classes_   = np.unique(y)
@@ -122,7 +88,6 @@ class DMC:
         return np.array(preds)
 
 
-# ─────────────────────────── UTILITÁRIOS ────────────────────────────────
 
 def stratified_split(X, y, test_size, rng):
     """Divisão estratificada: preserva a proporção de classes em treino e teste."""
@@ -150,16 +115,12 @@ def confusion_matrix(y_true, y_pred, classes):
 
 
 def normalize(X_tr, X_te):
-    """
-    Normalização z-score estimada no treino e aplicada a treino e teste:
-        x_norm = (x - mu_tr) / sigma_tr
-    Evita data leakage: mu e sigma calculados apenas sobre X_tr.
-    """
+   
     mu, s = X_tr.mean(0), X_tr.std(0) + 1e-9
     return (X_tr - mu) / s, (X_te - mu) / s
 
 
-# ─────────────────────────── PLOTS ──────────────────────────────────────
+
 
 def plot_cm(cm, names, title, ax):
     ax.imshow(cm, cmap='Blues')
@@ -233,7 +194,6 @@ def plot_gaussians(X, y, tr_idx, te_idx, f1, f2, fnames, cnames, ax, title):
     ax.set_title(title, fontsize=10); ax.legend(fontsize=8)
 
 
-# ─────────────────────────── DATASET ────────────────────────────────────
 
 def make_dataset():
     rng = np.random.default_rng(DATASET_SEED)
@@ -247,7 +207,7 @@ def make_dataset():
     return X, y
 
 
-# ─────────────────────────── MAIN ───────────────────────────────────────
+
 
 def main():
     print("=" * 60)
@@ -301,7 +261,7 @@ def main():
     cm_knn = confusion_matrix(y[r['te']], r['knn_p'], classes)
     cm_dmc = confusion_matrix(y[r['te']], r['dmc_p'], classes)
 
-    # ── Figura 1: Matrizes de Confusão ───────────────────────────────────
+    # ── Figura 1: Matrizes de Confusão
     fig1, axes = plt.subplots(1, 3, figsize=(13, 4))
     fig1.suptitle(f'Matrizes de Confusao — Artificial I  (Realizacao #{med+1})', fontsize=12)
     plot_cm(cm_nb,  CLASS_NAMES, f'Naive Bayes\nAcc={r["na"]*100:.1f}%',  axes[0])
@@ -311,7 +271,7 @@ def main():
     plt.savefig('confusion_matrices.png', dpi=150, bbox_inches='tight')
     print("Salvo: confusion_matrices.png")
 
-    # ── Figura 2: Superfícies de Decisão ─────────────────────────────────
+    # ── Figura 2: Superfícies de Decisão 
     fig2, axes = plt.subplots(1, 3, figsize=(15, 5))
     fig2.suptitle(f'Superficies de Decisao — Artificial I\n'
                   f'Atributos: {FEAT_NAMES[F1]} x {FEAT_NAMES[F2]}', fontsize=12)
@@ -325,7 +285,7 @@ def main():
     plt.savefig('decision_surfaces.png', dpi=150, bbox_inches='tight')
     print("Salvo: decision_surfaces.png")
 
-    # ── Figura 3: Gaussianas sobre os dados ───────────────────────────────
+    # ── Figura 3: Gaussianas sobre os dados 
     fig3, ax = plt.subplots(figsize=(7, 6))
     plot_gaussians(X, y, r['tr'], r['te'], F1, F2, FEAT_NAMES, CLASS_NAMES, ax,
                    f'Gaussianas NB por Classe — Artificial I\n'

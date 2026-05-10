@@ -1,15 +1,10 @@
-"""Classificador Naive Bayes, KNN e DMC - Dermatology
-Dataset: dermatology.data  (366 amostras, 34 atributos, 6 classes).
-Valores faltantes em 'age' substituídos pela média da coluna.
-Superfície de decisão e gaussianas: erythema (f0) x scaling (f1).
-"""
 
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-# ─────────────────────────── CONFIGURAÇÕES ──────────────────────────────
+
 N_REAL    = 20
 TEST_SIZE = 0.2
 KNN_K     = 5
@@ -36,23 +31,9 @@ CLASS_NAMES = [
     'pityriasis rosea', 'cronic dermatitis', 'pityriasis rubra pilaris'
 ]
 
-# ─────────────────────────── CLASSIFICADORES ────────────────────────────
 
 class NaiveBayes:
-    """
-    Naive Bayes Gaussiano — independência condicional entre atributos.
-
-    Regra de decisão (log-domínio):
-        f(x) = argmax_i [ log P(w_i) + sum_j log p(x_j | w_i) ]
-
-    Verossimilhança Gaussiana univariada por atributo j e classe i:
-        p(x_j | w_i) = 1 / sqrt(2*pi*sigma_ij^2)
-                       * exp( -(x_j - mu_ij)^2 / (2*sigma_ij^2) )
-
-    Parâmetros estimados por MLE no treino:
-        mu_ij    = (1/n_i) * sum_{k in i} x_{kj}
-        sigma_ij = sqrt( (1/n_i) * sum_{k in i} (x_{kj} - mu_ij)^2 )
-    """
+  
 
     def fit(self, X, y):
         self.classes_ = np.unique(y)
@@ -87,17 +68,7 @@ class NaiveBayes:
 
 
 class KNN:
-    """
-    K Vizinhos Mais Próximos (KNN).
-
-    Distância Euclidiana entre x e cada amostra de treino x_j:
-        d(x, x_j) = sqrt( sum_l (x_l - x_jl)^2 )
-
-    Classificação por voto majoritário entre os k vizinhos mais próximos:
-        y_hat(x) = argmax_{w_i} sum_{j in N_k(x)} 1[ y_j == w_i ]
-
-    onde N_k(x) é o conjunto dos índices dos k vizinhos mais próximos.
-    """
+   
 
     def __init__(self, k=5):
         self.k = k
@@ -117,15 +88,7 @@ class KNN:
 
 
 class DMC:
-    """
-    Classificador de Distância Mínima ao Centróide (DMC).
-
-    Centróide de cada classe i estimado no treino:
-        c_i = (1/n_i) * sum_{k=1}^{n_i} x_k^(i)
-
-    Classificação: classe cujo centróide é mais próximo em distância Euclidiana:
-        y_hat(x) = argmin_{w_i} ||x - c_i||_2
-    """
+ 
 
     def fit(self, X, y):
         self.classes_   = np.unique(y)
@@ -141,10 +104,10 @@ class DMC:
         return np.array(preds)
 
 
-# ─────────────────────────── UTILITÁRIOS ────────────────────────────────
+
 
 def stratified_split(X, y, test_size, rng):
-    """Divisão estratificada: preserva a proporção de classes em treino e teste."""
+    
     tr, te = [], []
     for c in np.unique(y):
         idx = np.where(y == c)[0]
@@ -178,7 +141,7 @@ def normalize(X_tr, X_te):
     return (X_tr - mu) / s, (X_te - mu) / s
 
 
-# ─────────────────────────── PLOTS ──────────────────────────────────────
+
 
 def plot_cm(cm, names, title, ax):
     ax.imshow(cm, cmap='Blues')
@@ -254,7 +217,6 @@ def plot_gaussians(X, y, tr_idx, te_idx, f1, f2, fnames, cnames, ax, title):
     ax.set_title(title, fontsize=10); ax.legend(fontsize=7)
 
 
-# ─────────────────────────── DATASET ────────────────────────────────────
 
 def load_data():
     rows = []
@@ -288,7 +250,7 @@ def load_data():
     return X, y
 
 
-# ─────────────────────────── MAIN ───────────────────────────────────────
+
 
 def main():
     print("=" * 60)

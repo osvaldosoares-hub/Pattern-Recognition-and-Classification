@@ -1,12 +1,3 @@
-"""
-Classificador Bayesiano Gaussiano Multivariado
-Comparação com KNN e DMC - Dataset Coluna Vertebral
-
-- Vetor de média e matriz de covariância específicos por classe
-- Probabilidades a posteriori calculadas diretamente (sem simplificações)
-- 20 realizações com acurácia e desvio padrão
-- Matriz de confusão e visualização para a realização mediana
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,10 +13,6 @@ warnings.filterwarnings('ignore')
 
 np.random.seed(0)
 
-# =============================================================
-# 1. CARREGAMENTO DOS DADOS
-# =============================================================
-
 def load_arff(filepath):
     """Carrega arquivo ARFF e retorna X (features), y (labels), classes."""
     data, meta = arff.loadarff(filepath)
@@ -39,84 +26,54 @@ def load_arff(filepath):
     return X, y, classes, df.columns[:-1].tolist()
 
 
-# =============================================================
-# 2. CLASSIFICADOR BAYESIANO GAUSSIANO MULTIVARIADO
-# =============================================================
 
 class GaussianBayesClassifier:
-    """
-    Classificador Bayesiano Gaussiano Multivariado completo.
-
-    Para cada classe c:
-      - mu_c  : vetor de médias (d,)
-      - Sigma_c: matriz de covariância (d x d) — específica por classe
-      - pi_c  : probabilidade a priori P(c)
-
-    Regra de decisão (log-escala para estabilidade numérica):
-      log P(c | x) ∝ log P(x | c) + log P(c)
-    onde
-      log P(x | c) = -0.5 * [(x-mu)^T Sigma^{-1} (x-mu)
-                              + log|Sigma| + d*log(2π)]
-    """
+   
 
     def fit(self, X, y):
         self.classes_ = np.unique(y)
-        self.means_   = {}
-        self.covs_    = {}
-        self.priors_  = {}
         n = len(y)
+        self.priors_ = {}
+        self.means_ = {}
+        self.covs_ = {}
+
         for c in self.classes_:
             Xc = X[y == c]
-            self.means_[c]  = np.mean(Xc, axis=0)
-            # ddof=1 para covariância não-viesada
-            self.covs_[c]   = np.cov(Xc, rowvar=False)
             self.priors_[c] = len(Xc) / n
+            self.means_[c] = np.mean(Xc, axis=0)
+            cov = np.cov(Xc, rowvar=False)
+            cov += np.eye(cov.shape[0]) * 1e-9
+            self.covs_[c] = cov
         return self
 
-    def _log_posterior(self, x, c):
-        """
-        Calcula log P(c|x) ∝ log P(x|c) + log P(c).
-        Usa a fórmula completa da gaussiana multivariada sem simplificações.
-        """
-        mu  = self.means_[c]
-        cov = self.covs_[c]
-        d   = len(mu)
-        # Regularização numérica mínima para garantir inversibilidade
-        cov_reg = cov + np.eye(d) * 1e-9
-
-        sign, logdet = np.linalg.slogdet(cov_reg)
+    def _log_gaussian(self, X: np.ndarray, mean: np.ndarray, cov: np.ndarray) -> np.ndarray:
+        d = X.shape[1]
+        diff = X - mean
+        sign, logdet = np.linalg.slogdet(cov)
         if sign <= 0:
-            return -np.inf
+            return np.full(len(X), -np.inf)
+        inv_cov = np.linalg.inv(cov)
+        mahal = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)
+        return -0.5 * (d * np.log(2 * np.pi) + logdet + mahal)
 
-        cov_inv = np.linalg.inv(cov_reg)
-        diff    = x - mu
-        # Forma quadrática
-        maha2   = diff @ cov_inv @ diff
+    def predict_log_posterior(self, X: np.ndarray) -> np.ndarray:
+        log_posts = np.column_stack([
+            self._log_gaussian(X, self.means_[c], self.covs_[c]) + np.log(self.priors_[c])
+            for c in self.classes_
+        ])
+        return log_posts
 
-        log_likelihood = -0.5 * (maha2 + logdet + d * np.log(2 * np.pi))
-        return log_likelihood + np.log(self.priors_[c])
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        log_posts = self.predict_log_posterior(X)
+        log_posts -= log_posts.max(axis=1, keepdims=True)
+        probs = np.exp(log_posts)
+        probs /= probs.sum(axis=1, keepdims=True)
+        return probs
 
-    def predict_proba(self, X):
-        """Retorna probabilidades a posteriori normalizadas para cada amostra."""
-        result = []
-        for x in X:
-            log_posts = np.array([self._log_posterior(x, c) for c in self.classes_])
-            # Subtrai o máximo para estabilidade numérica antes de exp
-            log_posts -= np.max(log_posts)
-            probs = np.exp(log_posts)
-            probs /= probs.sum()
-            result.append(probs)
-        return np.array(result)
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        log_posts = self.predict_log_posterior(X)
+        return self.classes_[np.argmax(log_posts, axis=1)]
 
-    def predict(self, X):
-        proba = self.predict_proba(X)
-        idx   = np.argmax(proba, axis=1)
-        return np.array([self.classes_[i] for i in idx])
-
-
-# =============================================================
-# 3. KNN
-# =============================================================
 
 class KNNClassifier:
     """K-Nearest Neighbors implementado do zero."""
@@ -140,9 +97,6 @@ class KNNClassifier:
         return np.array(predictions)
 
 
-# =============================================================
-# 4. DMC — Distância Mínima ao Centroide
-# =============================================================
 
 class DMCClassifier:
     """Classifica pela distância euclidiana mínima ao centroide de cada classe."""
@@ -160,16 +114,10 @@ class DMCClassifier:
         return np.array(predictions)
 
 
-# =============================================================
-# 5. EXPERIMENTOS — 20 REALIZAÇÕES
-# =============================================================
 
 def run_experiments(X, y, classes, dataset_name, n_realizations=20,
                     test_size=0.3, base_seed=42, k_knn=5):
-    """
-    Executa n_realizations experimentos com splits aleatórios diferentes.
-    Retorna resultados e a realização mais próxima da mediana (GBC).
-    """
+  
     gbc_accs, knn_accs, dmc_accs = [], [], []
     realizations = []
 
@@ -223,10 +171,6 @@ def run_experiments(X, y, classes, dataset_name, n_realizations=20,
     return gbc_accs, knn_accs, dmc_accs, best
 
 
-# =============================================================
-# 6. MATRIZ DE CONFUSÃO
-# =============================================================
-
 def plot_confusion_matrix(y_true, y_pred, classes, title, ax):
     cm = confusion_matrix(y_true, y_pred, labels=classes)
     im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
@@ -247,10 +191,6 @@ def plot_confusion_matrix(y_true, y_pred, classes, title, ax):
     ax.set_ylim(len(classes) - 0.5, -0.5)
 
 
-# =============================================================
-# 7. ELIPSE DE COVARIÂNCIA (GAUSSIANA 2D)
-# =============================================================
-
 def plot_covariance_ellipse(ax, mean_2d, cov_2d, color, n_std=2.0, alpha=0.15, lw=1.5):
     """Elipse de covariância 2D via decomposição em autovalores."""
     eigvals, eigvecs = np.linalg.eigh(cov_2d)
@@ -264,17 +204,8 @@ def plot_covariance_ellipse(ax, mean_2d, cov_2d, color, n_std=2.0, alpha=0.15, l
     ax.add_patch(ell)
 
 
-# =============================================================
-# 8. VISUALIZAÇÃO: GAUSSIANAS + TREINO/TESTE (PCA 2D)
-# =============================================================
-
 def plot_gaussians_pca(gbc, X_tr, y_tr, X_te, y_te, classes, title, ax):
-    """
-    Projeta dados em 2D via PCA e plota:
-    - Pontos de treino (○) e teste (△)
-    - Elipses de covariância 1σ e 2σ por classe
-    - Centroide (★) de cada classe
-    """
+   
     pca = PCA(n_components=2)
     pca.fit(X_tr)
 
@@ -312,10 +243,6 @@ def plot_gaussians_pca(gbc, X_tr, y_tr, X_te, y_te, classes, title, ax):
     ax.grid(True, alpha=0.25)
 
 
-# =============================================================
-# 9. BOXPLOT COMPARATIVO
-# =============================================================
-
 def plot_comparison(gbc_accs, knn_accs, dmc_accs, dataset_name, ax, k_knn):
     data   = [gbc_accs, knn_accs, dmc_accs]
     labels = ['GBC', f'KNN\n(k={k_knn})', 'DMC']
@@ -336,10 +263,6 @@ def plot_comparison(gbc_accs, knn_accs, dmc_accs, dataset_name, ax, k_knn):
                 f'{np.mean(acc_list):.3f}±{np.std(acc_list):.3f}',
                 ha='center', va='bottom', fontsize=7, color='navy')
 
-
-# =============================================================
-# 10. MAIN
-# =============================================================
 
 if __name__ == '__main__':
 

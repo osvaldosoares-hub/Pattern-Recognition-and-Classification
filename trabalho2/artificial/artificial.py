@@ -54,72 +54,52 @@ def confusion_matrix(y_true, y_pred, classes):
 
 
 class GaussianBayesClassifier:
-    """
-    Classificador Bayesiano Gaussiano Multivariado.
-
-    Cada classe possui seu próprio vetor de média mu_c e matriz de covariância
-    Sigma_c. A probabilidade a posteriori é calculada diretamente via Bayes:
-
-        P(c | x) = p(x | c) * P(c) / p(x)
-
-    onde p(x | c) é a densidade gaussiana multivariada:
-
-        p(x | c) = (2*pi)^(-d/2) * |Sigma_c|^(-1/2)
-                   * exp(-0.5 * (x-mu_c)^T * Sigma_c^-1 * (x-mu_c))
-
-    e p(x) = sum_c p(x|c)*P(c)  (evidência — usada para normalização).
-    Nenhuma simplificação (LDA/QDA, log-soma, classes equiprováveis, etc.) é feita.
-    """
+    
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         self.classes_ = np.unique(y)
         n = len(y)
-        self.priors_: dict = {}
-        self.means_:  dict = {}
-        self.covs_:   dict = {}
+        self.priors_ = {}
+        self.means_ = {}
+        self.covs_ = {}
+
         for c in self.classes_:
             Xc = X[y == c]
-            self.priors_[c] = len(Xc) / n                    # prior empírico
-            self.means_[c]  = np.mean(Xc, axis=0)            # mu_c
-            self.covs_[c]   = np.cov(Xc, rowvar=False)       # Sigma_c (ddof=1)
+            self.priors_[c] = len(Xc) / n
+            self.means_[c] = np.mean(Xc, axis=0)
+            cov = np.cov(Xc, rowvar=False)
+            cov += np.eye(cov.shape[0]) * 1e-9
+            self.covs_[c] = cov
         return self
 
-    # ------------------------------------------------------------------
-    def _likelihood(self, x: np.ndarray, c) -> float:
-        """Densidade gaussiana multivariada p(x | c)."""
-        return float(multivariate_normal.pdf(
-            x,
-            mean=self.means_[c],
-            cov=self.covs_[c],
-            allow_singular=True,
-        ))
+    def _log_gaussian(self, X: np.ndarray, mean: np.ndarray, cov: np.ndarray) -> np.ndarray:
+        d = X.shape[1]
+        diff = X - mean
+        sign, logdet = np.linalg.slogdet(cov)
+        if sign <= 0:
+            return np.full(len(X), -np.inf)
+        inv_cov = np.linalg.inv(cov)
+        mahal = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)
+        return -0.5 * (d * np.log(2 * np.pi) + logdet + mahal)
 
-    # ------------------------------------------------------------------
+    def predict_log_posterior(self, X: np.ndarray) -> np.ndarray:
+        log_posts = np.column_stack([
+            self._log_gaussian(X, self.means_[c], self.covs_[c]) + np.log(self.priors_[c])
+            for c in self.classes_
+        ])
+        return log_posts
+
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """
-        Retorna a matriz de probabilidades a posteriori P(c|x) de forma (n, K).
-        O cálculo é feito diretamente: numerador = p(x|c)*P(c),
-        denominador = soma dos numeradores sobre todas as classes (evidência).
-        """
-        n, K = len(X), len(self.classes_)
-        posteriors = np.zeros((n, K))
+        log_posts = self.predict_log_posterior(X)
+        log_posts -= log_posts.max(axis=1, keepdims=True)
+        probs = np.exp(log_posts)
+        probs /= probs.sum(axis=1, keepdims=True)
+        return probs
 
-        for i, x in enumerate(X):
-            for j, c in enumerate(self.classes_):
-                posteriors[i, j] = self._likelihood(x, c) * self.priors_[c]
-
-        # Normalização pela evidência p(x) para obter P(c|x) verdadeiro
-        evidence = posteriors.sum(axis=1, keepdims=True)
-        evidence = np.where(evidence == 0, 1e-300, evidence)   # estabilidade numérica
-        return posteriors / evidence
-
-    # ------------------------------------------------------------------
     def predict(self, X: np.ndarray) -> np.ndarray:
-        proba = self.predict_proba(X)
-        return self.classes_[np.argmax(proba, axis=1)]
+        log_posts = self.predict_log_posterior(X)
+        return self.classes_[np.argmax(log_posts, axis=1)]
 
-
-# ----------------------------------------------------------------------
 
 class KNNClassifier:
     """K-Nearest Neighbours com distância Euclidiana."""
@@ -141,8 +121,6 @@ class KNNClassifier:
         return np.array(preds)
 
 
-# ----------------------------------------------------------------------
-
 class DMCClassifier:
     """Distância Mínima ao Centróide (Minimum Distance Classifier)."""
 
@@ -158,10 +136,6 @@ class DMCClassifier:
         )
         return self.classes_[np.argmin(dists, axis=1)]
 
-
-# =============================================================================
-# 4. Experimento — 20 Realizações (hold-out 80 / 20)
-# =============================================================================
 
 N_REALIZATIONS = 20
 N_PER_CLASS    = 40
@@ -234,10 +208,6 @@ print(
 )
 
 
-# =============================================================================
-# 5. Matriz de Confusão — Realização Escolhida
-# =============================================================================
-
 cm_bayes = confusion_matrix(best['y_te'], best['preds']['Bayes'], CLASSES)
 cm_knn   = confusion_matrix(best['y_te'], best['preds']['KNN'],   CLASSES)
 cm_dmc   = confusion_matrix(best['y_te'], best['preds']['DMC'],   CLASSES)
@@ -264,10 +234,6 @@ plt.tight_layout()
 plt.savefig('confusion_matrices.png', dpi=150, bbox_inches='tight')
 plt.show()
 
-
-# =============================================================================
-# 6. Superfície de Decisão + Gaussianas + Dados Treino/Teste
-# =============================================================================
 
 MARKERS = ['o', '^', '*']
 COLORS  = ['royalblue', 'darkorange', 'seagreen']
@@ -341,10 +307,6 @@ plt.tight_layout()
 plt.savefig('decision_surface.png', dpi=150, bbox_inches='tight')
 plt.show()
 
-
-# =============================================================================
-# 7. Gráfico comparativo das acurácias (barras + box-plot)
-# =============================================================================
 
 fig, axes = plt.subplots(1, 2, figsize=(13, 4))
 

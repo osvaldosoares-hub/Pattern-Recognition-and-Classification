@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Classificador Bayesiano Gaussiano Multivariado
-Dataset: Breast Cancer Wisconsin (WDBC)
-Comparação com KNN e DMC
-
-- Vetores de média e matrizes de covariância específicos por classe
-- Probabilidades a posteriori calculadas diretamente (sem simplificações)
-- 20 realizações com 80/20 treino/teste estratificado
-"""
 
 import numpy as np
 import pandas as pd
@@ -42,78 +31,52 @@ print(f"  Classe 0 (Benigno): {np.sum(y_raw == 0)} amostras")
 print(f"  Classe 1 (Maligno): {np.sum(y_raw == 1)} amostras")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  CLASSIFICADORES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 class GaussianBayesClassifier:
-    """
-    Classificador Bayesiano Gaussiano Multivariado (sem simplificações).
-
-    Para cada classe k:
-        P(C_k | x) = P(x | C_k) * P(C_k) / P(x)
-
-    onde P(x | C_k) é a densidade gaussiana multivariada com parâmetros
-    específicos da classe k (μ_k, Σ_k).
-
-    A decisão é: argmax_k [ log P(x | C_k) + log P(C_k) ]
-    As probabilidades a posteriori são normalizadas numericamente para
-    fornecer valores reais em [0, 1].
-    """
+   
 
     def fit(self, X, y):
         self.classes_ = np.unique(y)
         n = len(y)
         self.priors_ = {}
-        self.means_  = {}
-        self.covs_   = {}
+        self.means_ = {}
+        self.covs_ = {}
 
         for c in self.classes_:
             Xc = X[y == c]
             self.priors_[c] = len(Xc) / n
-            self.means_[c]  = np.mean(Xc, axis=0)
-            # Covariância completa por classe + regularização numérica
+            self.means_[c] = np.mean(Xc, axis=0)
             cov = np.cov(Xc, rowvar=False)
-            cov += np.eye(X.shape[1]) * 1e-9
+            cov += np.eye(cov.shape[0]) * 1e-9
             self.covs_[c] = cov
         return self
 
-    def _log_likelihood(self, X, c):
-        """
-        Log-densidade gaussiana multivariada:
-        log p(x | C_k) = -0.5 * [d*ln(2π) + ln|Σ_k| + (x-μ_k)^T Σ_k^{-1} (x-μ_k)]
-        """
-        mean = self.means_[c]
-        cov  = self.covs_[c]
-        d    = X.shape[1]
-
+    def _log_gaussian(self, X: np.ndarray, mean: np.ndarray, cov: np.ndarray) -> np.ndarray:
+        d = X.shape[1]
+        diff = X - mean
         sign, logdet = np.linalg.slogdet(cov)
         if sign <= 0:
             return np.full(len(X), -np.inf)
+        inv_cov = np.linalg.inv(cov)
+        mahal = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)
+        return -0.5 * (d * np.log(2 * np.pi) + logdet + mahal)
 
-        inv_cov  = np.linalg.inv(cov)
-        diff     = X - mean                                          # (N, d)
-        mahal    = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)    # Mahalanobis²
-
-        return -0.5 * (d * np.log(2.0 * np.pi) + logdet + mahal)
-
-    def predict_proba(self, X):
-        """Probabilidades a posteriori normalizadas P(C_k | x) para cada amostra."""
+    def predict_log_posterior(self, X: np.ndarray) -> np.ndarray:
         log_posts = np.column_stack([
-            self._log_likelihood(X, c) + np.log(self.priors_[c])
+            self._log_gaussian(X, self.means_[c], self.covs_[c]) + np.log(self.priors_[c])
             for c in self.classes_
         ])
-        # Estabilização numérica antes de aplicar exp
+        return log_posts
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        log_posts = self.predict_log_posterior(X)
         log_posts -= log_posts.max(axis=1, keepdims=True)
         probs = np.exp(log_posts)
         probs /= probs.sum(axis=1, keepdims=True)
         return probs
 
-    def predict(self, X):
-        log_posts = np.column_stack([
-            self._log_likelihood(X, c) + np.log(self.priors_[c])
-            for c in self.classes_
-        ])
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        log_posts = self.predict_log_posterior(X)
         return self.classes_[np.argmax(log_posts, axis=1)]
 
 
@@ -151,10 +114,6 @@ class KNNClassifier:
         votes  = self.y_train_[k_idx]           # (N_test, k)
         return np.array([np.bincount(v, minlength=2).argmax() for v in votes])
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  20 REALIZAÇÕES
-# ═══════════════════════════════════════════════════════════════════════════════
 N_REAL = 20
 K_KNN  = 5
 results  = {'GBC': [], 'KNN': [], 'DMC': []}
@@ -194,7 +153,6 @@ for seed in range(N_REAL):
     print(f"  Seed {seed:02d} → GBC={acc_gbc*100:.2f}%  KNN={acc_knn*100:.2f}%  DMC={acc_dmc*100:.2f}%")
 
 
-# ─── Resumo ───────────────────────────────────────────────────────────────────
 print("\n" + "=" * 65)
 print("RESUMO — 20 Realizações")
 print("=" * 65)
@@ -205,10 +163,7 @@ for name in ['GBC', 'KNN', 'DMC']:
     print(f"{name:<12} {np.mean(accs)*100:>15.4f}%  {np.std(accs)*100:>13.4f}%")
 print("=" * 65)
 
-# ─── Realização escolhida ─────────────────────────────────────────────────────
-# Critério: seed cuja acurácia GBC é a mais próxima da média das 20 realizações.
-# Essa escolha representa o desempenho "típico" do classificador, evitando
-# tanto os melhores quanto os piores casos e tornando a análise representativa.
+
 gbc_accs   = np.array(results['GBC'])
 chosen_idx = int(np.argmin(np.abs(gbc_accs - np.mean(gbc_accs))))
 Xtr, Xte, ytr, yte, ypred_gbc, ypred_knn, ypred_dmc, gbc_model, scaler_ch, seed_ch = all_runs[chosen_idx]
@@ -220,10 +175,6 @@ print("  Justificativa: realização cuja acurácia GBC se encontra mais")
 print("  próxima da média das 20 realizações → caso mais representativo")
 print("  do comportamento típico do classificador.\n")
 
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FUNÇÕES AUXILIARES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def plot_covariance_ellipse(ax, mean_2d, cov_2d, color, n_std=2.0, alpha=0.15, lw=1.5):
     """Elipse de covariância 2D via decomposição em autovalores."""
@@ -266,9 +217,6 @@ def plot_conf_matrix(ax, y_true, y_pred, title):
     return cm
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FIGURA 1 — Comparação de Acurácias (20 realizações)
-# ═══════════════════════════════════════════════════════════════════════════════
 fig1, axes1 = plt.subplots(1, 2, figsize=(14, 5))
 fig1.suptitle('Comparação de Classificadores — Breast Cancer Wisconsin\n'
               '20 Realizações (80/20 treino/teste estratificado)',
@@ -318,9 +266,6 @@ plt.savefig('fig1_comparacao_classificadores.png', dpi=150, bbox_inches='tight')
 print("Figura 1 salva: fig1_comparacao_classificadores.png")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FIGURA 2 — Matrizes de Confusão (realização escolhida)
-# ═══════════════════════════════════════════════════════════════════════════════
 fig2, axes2 = plt.subplots(1, 3, figsize=(15, 4))
 fig2.suptitle(
     f'Matrizes de Confusão — Realização #{chosen_idx} (seed={seed_ch})\n'
@@ -338,10 +283,6 @@ plt.savefig('fig2_matrizes_confusao.png', dpi=150, bbox_inches='tight')
 print("Figura 2 salva: fig2_matrizes_confusao.png")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  FIGURA 3 — Gaussianas sobrepostas aos dados (PCA 2D)
-# ═══════════════════════════════════════════════════════════════════════════════
-# Redução PCA → 2 componentes para visualização das gaussianas
 pca    = PCA(n_components=2, random_state=42)
 Xtr_2d = pca.fit_transform(Xtr)   # fit apenas no treino
 Xte_2d = pca.transform(Xte)

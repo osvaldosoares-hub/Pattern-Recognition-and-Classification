@@ -1,7 +1,3 @@
-"""
-Classificadores: Bayesiano Gaussiano, KNN e DMC
-Avaliados no dataset Iris com 20 realizações
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,72 +8,54 @@ from sklearn.datasets import load_iris
 from itertools import combinations
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1. CLASSIFICADOR BAYESIANO GAUSSIANO MULTIVARIADO
-# ─────────────────────────────────────────────────────────────────────────────
 
 class BayesianoGaussiano:
-    """
-    Classificador Bayesiano Gaussiano Multivariado.
-    - Vetor de médias e matriz de covariância específicos por classe.
-    - Probabilidades a posteriori computadas diretamente (sem simplificações).
-    - Prior = frequência relativa de cada classe no treino.
-    """
+   
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         self.classes_ = np.unique(y)
-        self.priori_  = {}
-        self.media_   = {}
-        self.cov_     = {}
-
         n = len(y)
+        self.priors_ = {}
+        self.means_ = {}
+        self.covs_ = {}
+
         for c in self.classes_:
             Xc = X[y == c]
-            self.priori_[c] = len(Xc) / n
-            self.media_[c]  = Xc.mean(axis=0)
-            # Covariância não-enviesada (ddof=1)
-            self.cov_[c]    = np.cov(Xc, rowvar=False)
+            self.priors_[c] = len(Xc) / n
+            self.means_[c] = np.mean(Xc, axis=0)
+            cov = np.cov(Xc, rowvar=False)
+            cov += np.eye(cov.shape[0]) * 1e-9
+            self.covs_[c] = cov
         return self
 
-    def _log_verossimilhanca(self, x: np.ndarray, c) -> float:
-        """Log da densidade gaussiana multivariada."""
-        mu  = self.media_[c]
-        cov = self.cov_[c]
-        d   = len(mu)
-        diff = x - mu
+    def _log_gaussian(self, X: np.ndarray, mean: np.ndarray, cov: np.ndarray) -> np.ndarray:
+        d = X.shape[1]
+        diff = X - mean
         sign, logdet = np.linalg.slogdet(cov)
         if sign <= 0:
-            return -np.inf
+            return np.full(len(X), -np.inf)
         inv_cov = np.linalg.inv(cov)
-        maha2   = diff @ inv_cov @ diff
-        return -0.5 * (d * np.log(2 * np.pi) + logdet + maha2)
+        mahal = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)
+        return -0.5 * (d * np.log(2 * np.pi) + logdet + mahal)
+
+    def predict_log_posterior(self, X: np.ndarray) -> np.ndarray:
+        log_posts = np.column_stack([
+            self._log_gaussian(X, self.means_[c], self.covs_[c]) + np.log(self.priors_[c])
+            for c in self.classes_
+        ])
+        return log_posts
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Retorna probabilidades a posteriori (n_amostras × n_classes)."""
-        n_amostras = X.shape[0]
-        n_classes  = len(self.classes_)
-        log_post   = np.full((n_amostras, n_classes), -np.inf)
-
-        for j, c in enumerate(self.classes_):
-            log_prior = np.log(self.priori_[c])
-            for i, x in enumerate(X):
-                log_post[i, j] = log_prior + self._log_verossimilhanca(x, c)
-
-        # Normalização em log (subtrai máximo para estabilidade numérica)
-        log_post -= log_post.max(axis=1, keepdims=True)
-        proba = np.exp(log_post)
-        proba /= proba.sum(axis=1, keepdims=True)
-        return proba
+        log_posts = self.predict_log_posterior(X)
+        log_posts -= log_posts.max(axis=1, keepdims=True)
+        probs = np.exp(log_posts)
+        probs /= probs.sum(axis=1, keepdims=True)
+        return probs
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        proba = self.predict_proba(X)
-        indices = proba.argmax(axis=1)
-        return self.classes_[indices]
+        log_posts = self.predict_log_posterior(X)
+        return self.classes_[np.argmax(log_posts, axis=1)]
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 2. KNN – K VIZINHOS MAIS PRÓXIMOS
-# ─────────────────────────────────────────────────────────────────────────────
 
 class KNN:
     """K-Nearest Neighbors com distância Euclidiana."""
@@ -100,10 +78,6 @@ class KNN:
         return np.array(preds)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 3. DMC – DISTÂNCIA MÍNIMA AO CENTRÓIDE
-# ─────────────────────────────────────────────────────────────────────────────
-
 class DMC:
     """Classificador por Distância Mínima ao Centróide (Nearest Centroid)."""
 
@@ -121,10 +95,6 @@ class DMC:
         return np.array(preds)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 4. FUNÇÃO DE AVALIAÇÃO (n realizações)
-# ─────────────────────────────────────────────────────────────────────────────
-
 def split_estratificado(X, y, frac_teste=0.2, seed=None):
     """Divisão treino/teste estratificada."""
     rng     = np.random.default_rng(seed)
@@ -140,10 +110,7 @@ def split_estratificado(X, y, frac_teste=0.2, seed=None):
 
 
 def avaliar(X, y, n_real=20, frac_teste=0.2, k_knn=3):
-    """
-    Realiza n_real rodadas de treino/teste e retorna
-    acurácias e divisão da melhor realização por classificador.
-    """
+   
     resultados = {"Bayesiano": [], "KNN": [], "DMC": []}
     splits     = {"Bayesiano": None, "KNN": None, "DMC": None}
     best_acc   = {"Bayesiano": -1,   "KNN": -1,   "DMC": -1}
@@ -166,11 +133,6 @@ def avaliar(X, y, n_real=20, frac_teste=0.2, k_knn=3):
                 splits[nome]   = (Xtr, ytr, Xte, yte, pred, seed)
 
     return resultados, splits
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 5. MATRIZ DE CONFUSÃO
-# ─────────────────────────────────────────────────────────────────────────────
 
 def matriz_confusao(y_true, y_pred, classes):
     n = len(classes)
@@ -201,10 +163,6 @@ def plot_matriz_confusao(mc, classes, titulo="Matriz de Confusão", ax=None):
     plt.colorbar(im, ax=ax)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 6. ELIPSE DE COVARIÂNCIA (GAUSSIANA 2D)
-# ─────────────────────────────────────────────────────────────────────────────
-
 def plot_covariance_ellipse(ax, mean_2d, cov_2d, color, n_std=2.0, alpha=0.15, lw=1.5):
     """Elipse de covariância 2D via decomposição em autovalores."""
     eigvals, eigvecs = np.linalg.eigh(cov_2d)
@@ -218,17 +176,10 @@ def plot_covariance_ellipse(ax, mean_2d, cov_2d, color, n_std=2.0, alpha=0.15, l
     ax.add_patch(ell)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 7. PLOT PRINCIPAL – GAUSSIANAS + DADOS TREINO/TESTE
-# ─────────────────────────────────────────────────────────────────────────────
-
 def plot_gaussianas(X, y, Xtr, ytr, Xte, yte, pred_te,
                     feat_i, feat_j, nomes_feat, nomes_classes,
                     titulo="Gaussianas por Classe"):
-    """
-    Plota elipses de covariância das gaussianas de cada classe
-    junto com os pontos de treino e teste no espaço 2D das features selecionadas.
-    """
+    
     classes   = np.unique(ytr)
     colors    = plt.cm.tab10(np.linspace(0, 0.7, len(classes)))
     color_map = {c: colors[i] for i, c in enumerate(classes)}
@@ -286,10 +237,6 @@ def plot_gaussianas(X, y, Xtr, ytr, Xte, yte, pred_te,
     return fig
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 8. EXECUÇÃO PRINCIPAL
-# ─────────────────────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
     # ── Carregar Iris ──────────────────────────────────────────────────────
     iris     = load_iris()
@@ -316,7 +263,7 @@ if __name__ == "__main__":
         accs = resultados[nome]
         print(f"{nome:<15} {np.mean(accs)*100:>9.2f}%  {np.std(accs)*100:>12.2f}%")
 
-    # ── 8.3 Boxplot de acurácias ──────────────────────────────────────────
+
     fig_box, ax_box = plt.subplots(figsize=(7, 5))
     dados_box = [resultados[n] for n in ["Bayesiano", "KNN", "DMC"]]
     bp = ax_box.boxplot(dados_box, patch_artist=True,
@@ -332,8 +279,6 @@ if __name__ == "__main__":
     plt.tight_layout()
     fig_box.savefig("boxplot_acuracia.png", dpi=150)
 
-    # ── 8.4 Escolha da realização para a matriz de confusão ───────────────
-    # Critério: realização com acurácia mais próxima da mediana (representativa)
     accs_bayes = np.array(resultados["Bayesiano"])
     mediana    = np.median(accs_bayes)
     seed_repr  = int(np.argmin(np.abs(accs_bayes - mediana)))
@@ -385,9 +330,6 @@ if __name__ == "__main__":
     plt.tight_layout()
     fig_mcs.savefig("matrizes_confusao_comparacao.png", dpi=150)
 
-    # ── 8.6 Plot gaussianas sobre os dados ────────────────────────────────
-    # Par de atributos escolhido: pétala comprimento × pétala largura (2 e 3)
-    # Justificativa: maior poder discriminativo entre as 3 classes do Iris.
     FEAT_I, FEAT_J = 2, 3  # petal length, petal width
 
     fig_gauss = plot_gaussianas(

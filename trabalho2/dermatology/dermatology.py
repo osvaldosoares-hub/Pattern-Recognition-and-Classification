@@ -1,7 +1,3 @@
-"""
-Classificador Bayesiano Gaussiano Multivariado - Dataset Dermatology
-Comparação com KNN e DMC
-"""
 
 import numpy as np
 import pandas as pd
@@ -15,7 +11,7 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
-# ─── 1. Carregar dados ────────────────────────────────────────────────────────
+
 col_names = [
     'erythema', 'scaling', 'definite_borders', 'itching', 'koebner_phenomenon',
     'polygonal_papules', 'follicular_papules', 'oral_mucosal_involvement',
@@ -50,65 +46,52 @@ CLASSES = sorted(np.unique(y))
 COLORS  = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628']
 
 
-# ─── 2. Implementação dos classificadores ─────────────────────────────────────
-
 class GaussianBayesClassifier:
-    """
-    Classificador Bayesiano Gaussiano Multivariado completo.
-    - Vetor de médias e matriz de covariância específicos por classe.
-    - Probabilidades a posteriori calculadas diretamente (sem simplificações).
-    """
+   
 
     def fit(self, X, y):
         self.classes_ = np.unique(y)
         n = len(y)
         self.priors_ = {}
-        self.means_  = {}
-        self.covs_   = {}
+        self.means_ = {}
+        self.covs_ = {}
+
         for c in self.classes_:
             Xc = X[y == c]
             self.priors_[c] = len(Xc) / n
-            self.means_[c]  = np.mean(Xc, axis=0)
+            self.means_[c] = np.mean(Xc, axis=0)
             cov = np.cov(Xc, rowvar=False)
-            # Regularização para evitar matrizes singulares
-            cov += np.eye(cov.shape[0]) * 1e-6
+            cov += np.eye(cov.shape[0]) * 1e-9
             self.covs_[c] = cov
         return self
 
-    def _log_gaussian(self, X, mean, cov):
-        """Log da densidade gaussiana multivariada para cada amostra em X."""
+    def _log_gaussian(self, X: np.ndarray, mean: np.ndarray, cov: np.ndarray) -> np.ndarray:
         d = X.shape[1]
-        diff = X - mean                          # (n, d)
+        diff = X - mean
         sign, logdet = np.linalg.slogdet(cov)
         if sign <= 0:
             return np.full(len(X), -np.inf)
-        inv_cov  = np.linalg.inv(cov)
-        mahal    = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)  # (n,)
-        log_prob = -0.5 * (d * np.log(2 * np.pi) + logdet + mahal)
-        return log_prob
+        inv_cov = np.linalg.inv(cov)
+        mahal = np.einsum('ni,ij,nj->n', diff, inv_cov, diff)
+        return -0.5 * (d * np.log(2 * np.pi) + logdet + mahal)
 
-    def predict_log_posterior(self, X):
-        """Retorna log das probabilidades a posteriori (não normalizadas)."""
-        n_samples = len(X)
-        n_classes = len(self.classes_)
-        log_post  = np.zeros((n_samples, n_classes))
-        for i, c in enumerate(self.classes_):
-            log_prior    = np.log(self.priors_[c])
-            log_like     = self._log_gaussian(X, self.means_[c], self.covs_[c])
-            log_post[:, i] = log_prior + log_like
-        return log_post
+    def predict_log_posterior(self, X: np.ndarray) -> np.ndarray:
+        log_posts = np.column_stack([
+            self._log_gaussian(X, self.means_[c], self.covs_[c]) + np.log(self.priors_[c])
+            for c in self.classes_
+        ])
+        return log_posts
 
-    def predict_proba(self, X):
-        """Probabilidades a posteriori normalizadas (via log-sum-exp)."""
-        log_post = self.predict_log_posterior(X)
-        # log-sum-exp para estabilidade numérica
-        max_log  = log_post.max(axis=1, keepdims=True)
-        exp_post = np.exp(log_post - max_log)
-        return exp_post / exp_post.sum(axis=1, keepdims=True)
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        log_posts = self.predict_log_posterior(X)
+        log_posts -= log_posts.max(axis=1, keepdims=True)
+        probs = np.exp(log_posts)
+        probs /= probs.sum(axis=1, keepdims=True)
+        return probs
 
-    def predict(self, X):
-        log_post = self.predict_log_posterior(X)
-        return self.classes_[np.argmax(log_post, axis=1)]
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        log_posts = self.predict_log_posterior(X)
+        return self.classes_[np.argmax(log_posts, axis=1)]
 
 
 class KNNClassifier:
@@ -151,7 +134,6 @@ class DMCClassifier:
         return self.classes_[np.argmin(dists, axis=1)]
 
 
-# ─── 3. Realizações ──────────────────────────────────────────────────────────
 N_REALIZATIONS = 20
 TEST_SIZE      = 0.2
 
@@ -192,7 +174,7 @@ for seed in range(N_REALIZATIONS):
     print(f"  [{seed:02d}] Bayes={a_b:.4f}  KNN={a_k:.4f}  DMC={a_d:.4f}")
 
 
-# ─── 4. Resultados ───────────────────────────────────────────────────────────
+
 print("\n" + "=" * 62)
 print("RESULTADOS – 20 REALIZAÇÕES  (80% treino / 20% teste, estratificado)")
 print("=" * 62)
@@ -216,7 +198,6 @@ print("  Justificativa: realização cuja acurácia do classificador Bayesiano")
 print("  é mais próxima da acurácia média das 20 realizações (mais representativa).")
 
 
-# ─── 5. Matrizes de confusão ─────────────────────────────────────────────────
 label_names = [CLASS_NAMES[c] for c in CLASSES]
 fig, axes = plt.subplots(1, 3, figsize=(22, 7))
 fig.suptitle(
@@ -246,7 +227,6 @@ plt.savefig('confusion_matrices.png', dpi=150, bbox_inches='tight')
 plt.show()
 
 
-# ─── 6. Comparação de acurácia por realização ─────────────────────────────────
 fig, ax = plt.subplots(figsize=(12, 5))
 x = np.arange(N_REALIZATIONS)
 ax.plot(x, acc_bayes, 'o-', label=f'Gaussiano Bayesiano  (μ={np.mean(acc_bayes):.4f}, σ={np.std(acc_bayes):.4f})',
@@ -270,7 +250,6 @@ plt.savefig('accuracy_comparison.png', dpi=150, bbox_inches='tight')
 plt.show()
 
 
-# ─── 7. Gaussianas sobre os dados (PCA 2D) ───────────────────────────────────
 def plot_covariance_ellipse(ax, mean_2d, cov_2d, color, n_std=2.0, alpha=0.15, lw=1.5):
     """Elipse de covariância 2D via decomposição em autovalores."""
     eigvals, eigvecs = np.linalg.eigh(cov_2d)
