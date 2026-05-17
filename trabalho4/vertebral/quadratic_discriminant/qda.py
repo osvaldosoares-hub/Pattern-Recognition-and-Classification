@@ -136,7 +136,7 @@ class QuadraticDiscriminantAnalysis:
 
 
 
-class QuadraticDiscriminantAnalysis(QuadraticDiscriminantAnalysis):
+class QDAFull(QuadraticDiscriminantAnalysis):
     
     def __init__(self, reg_covar=1e-6):
         super().__init__(mode='qda_full', reg_covar=reg_covar)
