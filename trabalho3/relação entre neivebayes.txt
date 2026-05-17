@@ -1,0 +1,24 @@
+Não, na maioria dos casos o GBC (Trabalho 2) é superior ao GNB (Trabalho 3), e isso faz sentido estatisticamente:
+
+GBC estima uma matriz de covariância completa 
+Σ
+^
+i
+Σ
+^
+  
+i
+​
+  por classe, capturando correlações entre atributos. GNB assume independência condicional, ou seja, usa apenas a diagonal — ignora essas correlações por hipótese.
+
+Quando as features são correlacionadas (quase sempre em dados reais), o GBC modela a distribuição de forma mais fiel e a fronteira de decisão (via distância de Mahalanobis) é mais precisa.
+
+O GNB só vence o GBC quando:
+
+As features realmente são (aproximadamente) independentes — aí a hipótese é satisfeita
+Há poucas amostras de treino: estimar uma matriz 
+d
+×
+d
+d×d com poucos pontos é instável (overfitting da covariância), e o GNB, sendo mais parcimonioso, generaliza melhor
+Por isso o GBC teve acurácia maior em todos os datasets. A troca feita no Trabalho 3 foi de modelo mais rico (GBC) → modelo mais simples e robusto em dados escassos (GNB), não uma melhoria em geral.
