@@ -12,7 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from linear_discriminant.lda import LinearDiscriminantAnalysis
 from quadratic_discriminant.qda  import (
-    QuadraticDiscriminantAnalysis,
+    QDAFull,
     QDADiagonal,
     QDASpherical,
     QDARegularized,
@@ -142,7 +142,7 @@ def main():
     # Basta adicionar ou remover entradas aqui para incluir/excluir classificadores
     CLASSIFIERS = {
         'LDA (Caso 2 — Σ pool.)    ': LinearDiscriminantAnalysis(),
-        'QDA Full (Caso 1 — Σ_k)   ': QuadraticDiscriminantAnalysis(),
+        'QDA Full (Caso 1 — Σ_k)   ': QDAFull(),
         'QDA Diagonal (Caso 3)      ': QDADiagonal(),
         'QDA Isotrópica (Caso 4)    ': QDASpherical(),
         'QDA Regularized            ': QDARegularized(),
