@@ -1,0 +1,31 @@
+TRABALHO 5 - DERMATOLOGY - GMM-BAYES
+============================================================
+Fonte dos dados: C:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\dermatology\dermatology.data
+
+GMM-Bayes:
+  Acurácia média: 0.8965
+  Desvio padrão : 0.0526
+  Mín/Máx       : 0.8056 / 0.9861
+
+LDA:
+  Acurácia média: 0.9694
+  Desvio padrão : 0.0168
+  Mín/Máx       : 0.9306 / 0.9861
+
+QDA:
+  Acurácia média: 0.3056
+  Desvio padrão : 0.0000
+  Mín/Máx       : 0.3056 / 0.3056
+
+KNN:
+  Acurácia média: 0.9632
+  Desvio padrão : 0.0166
+  Mín/Máx       : 0.9167 / 0.9861
+
+DMC:
+  Acurácia média: 0.9625
+  Desvio padrão : 0.0216
+  Mín/Máx       : 0.9167 / 1.0000
+
+Escolha da matriz de confusão:
+Realização 20 escolhida por maior acurácia do GMM-Bayes (0.9861), com margem local 0.9861.

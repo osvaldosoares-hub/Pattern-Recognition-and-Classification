@@ -1,0 +1,241 @@
+
+\chapter{Resultados}
+
+ 
+Este trabalho avaliou o classificador Bayesiano com Misturas de Gaussianas (GMM-Bayes,
+$J=3$ componentes por classe) em cinco conjuntos de dados, comparando-o com LDA, QDA,
+KNN ($k=5$) e DMC ao longo de 20 realizações independentes com divisão estratificada
+80\%/20\%. A Tabela~\ref{tab:resumo_geral} consolida os resultados obtidos.
+ 
+\begin{table}[htbp]
+  \centering
+  \caption{Resumo geral — acurácia média (\%) dos classificadores por dataset.}
+  \label{tab:resumo_geral}
+  \begin{tabular}{lccccc}
+    \hline
+    \textbf{Dataset}      & \textbf{GMM-Bayes} & \textbf{LDA}  & \textbf{QDA}  & \textbf{KNN}  & \textbf{DMC}  \\
+    \hline
+    Artificial I          & \textbf{100,00}    & 97,69         & 98,46         & \textbf{100,00} & 88,85       \\
+    Breast Cancer         & 94,12              & 96,23         & 95,09         & \textbf{96,49}  & 93,46       \\
+    Dermatology           & 89,44              & \textbf{96,94} & 30,56        & 96,32         & 96,25       \\
+    Íris                  & 95,83              & \textbf{98,33} & 97,83        & 95,83         & 86,83       \\
+    Coluna Vertebral      & 80,00              & 77,98         & \textbf{83,23} & 77,34        & 73,47       \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\section{Análise por dataset}
+
+\subsection{Artificial I.}
+O GMM-Bayes obteve acurácia média perfeita (100,00\%), empatando com o KNN e superando
+QDA (98,46\%) e LDA (97,69\%). 
+\begin{table}[htbp]
+  \centering
+  \caption{Resultados detalhados --- Artificial I.}
+  \label{tab:det_artificial}
+  \begin{tabular}{lcccc}
+    \hline
+    \textbf{Classificador} & \textbf{Média (\%)} & \textbf{DP (\%)} & \textbf{Mín (\%)} & \textbf{Máx (\%)} \\
+    \hline
+    GMM-Bayes & 100,00 & 0,00 & 100,00 & 100,00 \\
+    LDA       & 97,69  & 2,55 & 92,31  & 100,00 \\
+    QDA       & 98,46  & 1,88 & 96,15  & 100,00 \\
+    KNN       & 100,00 & 0,00 & 100,00 & 100,00 \\
+    DMC       & 88,85  & 5,82 & 73,08  & 100,00 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/artificial/superficies_decisao.png}
+   \caption{Superfície de decisão do discriminante quadratico — Dataset Artificial I}
+    \label{fig:iris_gaussians}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/artificial/matriz_confusao.png}
+     \caption{Matrizes de confusão dos três classificadores — Dataset Artificial I}
+    \label{fig:iris_gaussians}
+\end{figure}
+
+Esse resultado é esperado: o dataset foi gerado sinteticamente
+com três clusters bem separados por classe, estrutura multimodal que os modelos de mistura
+capturam naturalmente. A acurácia perfeita e desvio padrão nulo indicam que os três
+componentes do GMM representam com exatidão a geometria dos dados, sem necessidade de
+fronteiras mais complexas como as do KNN.
+
+\subsection{Breast Cancer (WDBC).}
+No \textit{Wisconsin Diagnostic Breast Cancer}, o GMM-Bayes obteve acurácia média de
+\begin{table}[htbp]
+  \centering
+  \caption{Resultados detalhados --- Breast Cancer (WDBC).}
+  \label{tab:det_breast}
+  \begin{tabular}{lcccc}
+    \hline
+    \textbf{Classificador} & \textbf{Média (\%)} & \textbf{DP (\%)} & \textbf{Mín (\%)} & \textbf{Máx (\%)} \\
+    \hline
+    GMM-Bayes & 94,12 & 2,02 & 90,35 & 97,37 \\
+    LDA       & 96,23 & 1,57 & 92,11 & 98,25 \\
+    QDA       & 95,09 & 1,58 & 92,98 & 99,12 \\
+    KNN       & 96,49 & 1,59 & 92,98 & 99,12 \\
+    DMC       & 93,46 & 1,56 & 90,35 & 96,49 \\
+    \hline
+  \end{tabular}
+\end{table}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/cancer/matriz_confusao.png}
+     \caption{Matrizes de confusão dos três classificadores — Dataset Cancer}
+    \label{fig:iris_gaussians}
+\end{figure}
+A maior variabilidade do GMM-Bayes  com uma faixa de quase $7$ pontos percentuais entre a pior e a melhor
+realização reflete a dificuldade de estimar $J=3$ componentes em $d=30$ dimensões;
+na melhor realização (13ª), o modelo chegou a $97{,}37\%$, mas em outras rodadas caiu
+para $\approx 90\%$. Em alta dimensionalidade com apenas duas classes, modelos mais
+parcimoniosos como o LDA e o KNN mostraram-se mais estáveis.
+
+\subsection{Dermatology.}
+O GMM-Bayes atingiu $89{,}44\%$ de acurácia média de 
+\begin{table}[htbp]
+  \centering
+  \caption{Resultados detalhados --- Dermatology.}
+  \label{tab:det_dermatology}
+  \begin{tabular}{lcccc}
+    \hline
+    \textbf{Classificador} & \textbf{Média (\%)} & \textbf{DP (\%)} & \textbf{Mín (\%)} & \textbf{Máx (\%)} \\
+    \hline
+    GMM-Bayes & 89,44 & 5,92 & 79,17 & 97,22 \\
+    LDA       & 96,94 & 1,68 & 93,06 & 98,61 \\
+    QDA       & 30,56 & 0,00 & 30,56 & 30,56 \\
+    KNN       & 96,32 & 1,66 & 91,67 & 98,61 \\
+    DMC       & 96,25 & 2,16 & 91,67 & 100,00 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/dermatologia/matriz_confusao.png}
+     \caption{Matrizes de confusão dos três classificadores — Dataset Dermatologia}
+    \label{fig:iris_gaussians}
+\end{figure}
+equivalente à predição
+da classe majoritária, evidenciando severo overfitting em $d=34$ atributos. O
+GMM-Bayes, apesar de mais expressivo, apresentou alta variabilidade (amplitude de
+$\approx 18$ pontos percentuais), alcançando $97{,}22\%$ na melhor realização (7ª),
+mas performando abaixo dos modelos lineares e de distância na média geral.
+
+\subsection{Íris.}
+O GMM-Bayes obteve\begin{table}[htbp]
+  \centering
+  \caption{Resultados detalhados --- Íris.}
+  \label{tab:det_iris}
+  \begin{tabular}{lcccc}
+    \hline
+    \textbf{Classificador} & \textbf{Média (\%)} & \textbf{DP (\%)} & \textbf{Mín (\%)} & \textbf{Máx (\%)} \\
+    \hline
+    GMM-Bayes & 95,83 & 3,78 & 86,67 & 100,00 \\
+    LDA       & 98,33 & 1,97 & 93,33 & 100,00 \\
+    QDA       & 97,83 & 2,42 & 93,33 & 100,00 \\
+    KNN       & 95,83 & 2,07 & 93,33 & 100,00 \\
+    DMC       & 86,83 & 4,88 & 76,67 & 96,67 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/iris/superficies_decisao.png}
+   \caption{Superfície de decisão do discriminante quadratico — Dataset iris}
+    \label{fig:iris_gaussians}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/iris/matriz_confusao.png}
+     \caption{Matrizes de confusão dos três classificadores — Dataset iris}
+    \label{fig:iris_gaussians}
+\end{figure}
+Na 3ª realização, o GMM-Bayes chegou à
+acurácia máxima de $100\%$, mas sua média foi penalizada por realizações com
+$\approx 86{,}67\%$, sugerindo que três componentes por classe introduziram
+complexidade desnecessária para um dataset aproximadamente unimodal e linearmente
+separável.
+
+\subsection{Coluna Vertebral.}
+No dataset \textit{Vertebral Column}, o GMM-Bayes alcançou $80{,}00\%$ \begin{table}[htbp]
+  \centering
+  \caption{Resultados detalhados --- Coluna Vertebral.}
+  \label{tab:det_vertebral}
+  \begin{tabular}{lcccc}
+    \hline
+    \textbf{Classificador} & \textbf{Média (\%)} & \textbf{DP (\%)} & \textbf{Mín (\%)} & \textbf{Máx (\%)} \\
+    \hline
+    GMM-Bayes & 80,00 & 3,44 & 74,19 & 88,71 \\
+    LDA       & 77,98 & 4,48 & 66,13 & 87,10 \\
+    QDA       & 83,23 & 3,93 & 74,19 & 88,71 \\
+    KNN       & 77,34 & 3,36 & 69,35 & 83,87 \\
+    DMC       & 73,47 & 5,21 & 62,90 & 82,26 \\
+    \hline
+  \end{tabular}
+\end{table}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/vertebral/superficies_decisao.png}
+   \caption{Superfície de decisão do discriminante quadratico — Dataset Vertebral}
+    \label{fig:iris_gaussians}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{documentos/imagens/vertebral/matriz_confusao.png}
+     \caption{Matrizes de confusão dos três classificadores — Dataset Vertebral}
+    \label{fig:iris_gaussians}
+\end{figure}
+
+Com $d=6$ atributos
+e três classes, o número de parâmetros do GMM é mais controlável do que nos
+datasets de alta dimensionalidade, permitindo que o modelo capture não-linearidades
+moderadas. Ainda assim, o QDA  que estima uma única covariância completa por
+classe  apresentou melhor média, indicando que a multimodalidade implícita em
+$J=3$ não se traduziu em vantagem consistente neste conjunto.
+ 
+\section*{Conclusões gerais}
+ 
+Com base nos experimentos realizados e na atualização da implementação para EM explícito,
+as seguintes conclusões podem ser destacadas:
+ 
+\begin{enumerate}
+ 
+  \item \textbf{O GMM-Bayes confirmou bom desempenho em cenários multimodais.}
+  No Artificial~I, o método manteve acurácia média de 100,00\%, empatando com KNN e
+  superando os demais classificadores lineares/quadráticos na média.
+ 
+  \item \textbf{Nos dados reais, o desempenho foi competitivo, porém não dominante.}
+  As médias do GMM-Bayes foram 94,12\% (Breast Cancer), 89,44\% (Dermatology),
+  95,83\% (Íris) e 80,00\% (Coluna Vertebral). Em Breast Cancer e Íris, o método ficou
+  próximo dos melhores; em Vertebral, ficou acima de LDA/KNN/DMC, mas abaixo de QDA.
+ 
+  \item \textbf{A nova implementação passou a usar EM explícito no código.}
+  Diferentemente da versão anterior baseada em chamada implícita de biblioteca, o código
+  atual implementa diretamente o Passo E (responsabilidades) e o Passo M (atualização de
+  pesos, médias e covariâncias), com inicialização por K-Means e regularização numérica.
+ 
+  \item \textbf{Validação da versão explícita no Iris foi bem-sucedida.}
+  No teste de caminho crítico executado em \texttt{gmm\_bayes.py}, as variantes obtiveram:
+  Full = 95,56\%, Diagonal = 93,33\%, Spherical = 95,56\% e Tied = 97,78\%, com melhor
+  resultado para a configuração \emph{tied}.
+ 
+  \item \textbf{A escolha de modelagem continua crítica para generalização.}
+  Mesmo com EM explícito, os resultados reforçam que desempenho depende de dimensionalidade,
+  separabilidade e número de componentes por classe, mantendo válida a recomendação de
+  seleção criteriosa de hiperparâmetros (por exemplo, via validação cruzada/BIC/AIC).
+ 
+\end{enumerate}
+ 
+Em síntese, o GMM-Bayes com EM explícito mostrou-se uma alternativa tecnicamente consistente
+e interpretável para classificação supervisionada probabilística. O método foi robusto nos
+testes executados e permanece especialmente atrativo quando há evidência de multimodalidade
+intra-classe, embora modelos mais parcimoniosos possam generalizar melhor em alguns cenários
+de alta dimensionalidade.

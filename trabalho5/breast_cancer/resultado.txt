@@ -1,0 +1,31 @@
+TRABALHO 5 - BREAST CANCER - GMM-BAYES
+============================================================
+Fonte dos dados: C:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\breast_cancer\wdbc.data
+
+GMM-Bayes:
+  Acurácia média: 0.9443
+  Desvio padrão : 0.0222
+  Mín/Máx       : 0.8947 / 0.9912
+
+LDA:
+  Acurácia média: 0.9623
+  Desvio padrão : 0.0157
+  Mín/Máx       : 0.9211 / 0.9825
+
+QDA:
+  Acurácia média: 0.9509
+  Desvio padrão : 0.0158
+  Mín/Máx       : 0.9298 / 0.9912
+
+KNN:
+  Acurácia média: 0.9649
+  Desvio padrão : 0.0159
+  Mín/Máx       : 0.9298 / 0.9912
+
+DMC:
+  Acurácia média: 0.9346
+  Desvio padrão : 0.0156
+  Mín/Máx       : 0.9035 / 0.9649
+
+Escolha da matriz de confusão:
+Realização 18 escolhida por maior acurácia do GMM-Bayes (0.9912), com margem local 0.9912.

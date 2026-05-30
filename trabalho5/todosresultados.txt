@@ -1,0 +1,131 @@
+TRABALHO 5 - BREAST CANCER - GMM-BAYES
+============================================================
+Fonte dos dados: C:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\breast_cancer\wdbc.data
+
+GMM-Bayes:
+  Acurácia média: 0.9412
+  Desvio padrão : 0.0202
+  Mín/Máx       : 0.9035 / 0.9737
+
+LDA:
+  Acurácia média: 0.9623
+  Desvio padrão : 0.0157
+  Mín/Máx       : 0.9211 / 0.9825
+
+QDA:
+  Acurácia média: 0.9509
+  Desvio padrão : 0.0158
+  Mín/Máx       : 0.9298 / 0.9912
+
+KNN:
+  Acurácia média: 0.9649
+  Desvio padrão : 0.0159
+  Mín/Máx       : 0.9298 / 0.9912
+
+DMC:
+  Acurácia média: 0.9346
+  Desvio padrão : 0.0156
+  Mín/Máx       : 0.9035 / 0.9649
+
+Escolha da matriz de confusão:
+Realização 13 escolhida por maior acurácia do GMM-Bayes (0.9737), com margem local 0.9737.
+
+
+TRABALHO 5 - DERMATOLOGY - GMM-BAYES
+============================================================
+Fonte dos dados: C:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\dermatology\dermatology.data
+
+GMM-Bayes:
+  Acurácia média: 0.8944
+  Desvio padrão : 0.0592
+  Mín/Máx       : 0.7917 / 0.9722
+
+LDA:
+  Acurácia média: 0.9694
+  Desvio padrão : 0.0168
+  Mín/Máx       : 0.9306 / 0.9861
+
+QDA:
+  Acurácia média: 0.3056
+  Desvio padrão : 0.0000
+  Mín/Máx       : 0.3056 / 0.3056
+
+KNN:
+  Acurácia média: 0.9632
+  Desvio padrão : 0.0166
+  Mín/Máx       : 0.9167 / 0.9861
+
+DMC:
+  Acurácia média: 0.9625
+  Desvio padrão : 0.0216
+  Mín/Máx       : 0.9167 / 1.0000
+
+Escolha da matriz de confusão:
+Realização 7 escolhida por maior acurácia do GMM-Bayes (0.9722), com margem local 0.9722.
+
+
+TRABALHO 5 - IRIS - GMM-BAYES
+============================================================
+
+GMM-Bayes:
+  Acurácia média: 0.9583
+  Desvio padrão : 0.0378
+  Mín/Máx       : 0.8667 / 1.0000
+
+LDA:
+  Acurácia média: 0.9833
+  Desvio padrão : 0.0197
+  Mín/Máx       : 0.9333 / 1.0000
+
+QDA:
+  Acurácia média: 0.9783
+  Desvio padrão : 0.0242
+  Mín/Máx       : 0.9333 / 1.0000
+
+KNN:
+  Acurácia média: 0.9583
+  Desvio padrão : 0.0207
+  Mín/Máx       : 0.9333 / 1.0000
+
+DMC:
+  Acurácia média: 0.8683
+  Desvio padrão : 0.0488
+  Mín/Máx       : 0.7667 / 0.9667
+
+Escolha da matriz de confusão:
+Realização 3 escolhida por maior acurácia do GMM-Bayes (1.0000), com margem local 1.0000 sobre o melhor concorrente na iteração.
+Par de atributos para superfície: petal length x petal width
+
+
+TRABALHO 5 - VERTEBRAL - GMM-BAYES
+============================================================
+Fonte dos dados: c:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\vertebral\column_3C.dat
+
+GMM-Bayes:
+  Acurácia média: 0.8000
+  Desvio padrão : 0.0344
+  Mín/Máx       : 0.7419 / 0.8871
+
+LDA:
+  Acurácia média: 0.7798
+  Desvio padrão : 0.0448
+  Mín/Máx       : 0.6613 / 0.8710
+
+QDA:
+  Acurácia média: 0.8323
+  Desvio padrão : 0.0393
+  Mín/Máx       : 0.7419 / 0.8871
+
+KNN:
+  Acurácia média: 0.7734
+  Desvio padrão : 0.0336
+  Mín/Máx       : 0.6935 / 0.8387
+
+DMC:
+  Acurácia média: 0.7347
+  Desvio padrão : 0.0521
+  Mín/Máx       : 0.6290 / 0.8226
+
+Escolha da matriz de confusão:
+Realização 10 escolhida por maior acurácia do GMM-Bayes (0.8871), com margem local 0.8871.
+Par de atributos para superfície: pelvic_incidence x lumbar_lordosis_angle

@@ -1,0 +1,119 @@
+% ============================================================
+%  conclusao.tex  –  Conclusão: GMM-Bayes vs. classificadores
+%  clássicos nos cinco datasets do Trabalho 5.
+%  Inclua no documento principal com \input{conclusao}
+% ============================================================
+
+\section{Conclusão}
+
+Este trabalho avaliou o classificador Bayesiano com Misturas de Gaussianas (GMM-Bayes,
+$J=3$ componentes por classe) em cinco conjuntos de dados, comparando-o com LDA, QDA,
+KNN ($k=5$) e DMC ao longo de 20 realizações independentes com divisão estratificada
+80\%/20\%. A Tabela~\ref{tab:resumo_geral} consolida os resultados obtidos.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Resumo geral — acurácia média (\%) dos classificadores por dataset.}
+  \label{tab:resumo_geral}
+  \begin{tabular}{lccccc}
+    \hline
+    \textbf{Dataset}      & \textbf{GMM-Bayes} & \textbf{LDA}  & \textbf{QDA}  & \textbf{KNN}  & \textbf{DMC}  \\
+    \hline
+    Artificial I          & \textbf{100,00}    & 97,69         & 98,46         & \textbf{100,00} & 88,85       \\
+    Breast Cancer         & 94,12              & 96,23         & 95,09         & \textbf{96,49}  & 93,46       \\
+    Dermatology           & 89,44              & \textbf{96,94} & 30,56        & 96,32         & 96,25       \\
+    Íris                  & 95,83              & \textbf{98,33} & 97,83        & 95,83         & 86,83       \\
+Coluna Vertebral      & 80,00              & 77,98         & 83,23         & 77,34        & 73,47        \\
+    \hline
+  \end{tabular}
+\end{table}
+
+\subsection*{Análise por dataset}
+
+\paragraph{Artificial I.}
+O GMM-Bayes obteve acurácia média perfeita (100,00\%), empatando com o KNN e superando
+QDA (98,46\%) e LDA (97,69\%). Esse resultado é esperado: o dataset foi gerado sinteticamente
+com três clusters bem separados por classe, estrutura multimodal que os modelos de mistura
+capturam naturalmente. A acurácia perfeita e desvio padrão nulo indicam que os três
+componentes do GMM representam com exatidão a geometria dos dados, sem necessidade de
+fronteiras mais complexas como as do KNN.
+
+\paragraph{Breast Cancer (WDBC).}
+Com 30 atributos e apenas 2 classes, o GMM-Bayes (94,12\%) ficou abaixo do LDA (96,23\%)
+e do KNN (96,49\%). Em alta dimensionalidade com poucas classes, estimar $J \cdot d(d+1)/2$
+parâmetros de covariância por componente torna-se instável, favorecendo modelos mais
+parcimoniosos como o LDA. O QDA com regularização também superou o GMM-Bayes (95,09\%),
+reforçando que a hipótese de gaussiana única por classe, com pooling ou regularização, é mais
+adequada para este dataset.
+
+\paragraph{Dermatology.}
+O GMM-Bayes atingiu 89,44\%, um resultado moderado frente ao LDA (96,94\%), KNN (96,32\%)
+e DMC (96,25\%). O resultado mais crítico neste dataset foi o colapso do QDA padrão (30,56\%),
+que corresponde à acurácia de um classificador que prediz apenas a classe majoritária,
+evidenciando severo overfitting com 34 atributos e poucas amostras por classe. O GMM-Bayes,
+embora mais expressivo que o LDA, também sofreu com a alta dimensionalidade, não sendo capaz
+de superar os modelos que impõem restrições mais fortes à covariância. Neste cenário, modelos
+lineares ou de distância mostraram-se mais robustos.
+
+\paragraph{Íris.}
+O GMM-Bayes (95,83\%) ficou abaixo do LDA (98,33\%) e do QDA (97,83\%), empatando com
+o KNN. O dataset Íris é amplamente reconhecido como aproximadamente linearmente separável
+após a remoção da classe \textit{setosa}, o que favorece discriminantes lineares. A adoção de
+três componentes por classe, possivelmente com sobreposição dentro de cada classe unimodal,
+introduziu uma complexidade desnecessária que penalizou levemente o GMM-Bayes em relação
+ao LDA.
+
+\paragraph{Coluna Vertebral.}
+Os resultados do dataset Coluna Vertebral ainda serão incorporados posteriormente.
+
+\subsection*{Conclusões gerais}
+
+Com base nos experimentos realizados, as seguintes conclusões podem ser extraídas:
+
+\begin{enumerate}
+
+  \item \textbf{GMM-Bayes é mais eficaz quando os dados são genuinamente multimodais.}
+  No Artificial~I, onde cada classe foi gerada com múltiplos focos gaussianos, o modelo
+  atingiu desempenho perfeito. A capacidade de representar distribuições multimodais
+  é a principal vantagem dos GMMs sobre os classificadores de componente único
+  \cite{bishop2006,theodoridis2009}.
+
+  \item \textbf{Alta dimensionalidade penaliza o GMM-Bayes.}
+  Nos datasets Breast Cancer (30 atributos) e Dermatology (34 atributos), o GMM-Bayes
+  ficou abaixo dos modelos mais simples. A estimação de $J \cdot d(d+1)/2$ parâmetros de
+  covariância por componente exige um número de amostras por classe muito maior do que o
+  disponível, tornando o modelo suscetível a overfitting \cite{duda2001}.
+
+  \item \textbf{LDA mantém robustez em cenários de alta dimensão e separação linear.}
+  Para Íris, Breast Cancer e Dermatology, o LDA apresentou os melhores ou segundo melhores
+  resultados entre os classificadores Bayesianos. Ao impor uma covariância pooled comum,
+  reduz drasticamente o número de parâmetros e generaliza melhor com amostras limitadas
+  \cite{duda2001,bishop2006}.
+
+  \item \textbf{O colapso do QDA no Dermatology é um alerta sobre overfitting.}
+  A acurácia de 30,56\% do QDA padrão — equivalente à predição da classe majoritária —
+  demonstra que, sem regularização, estimar uma matriz de covariância completa por classe
+  em dimensão $d=34$ com poucas amostras é numericamente instável. Essa instabilidade
+  justifica o uso de regularização de Tikhonov ou interpolação com a covariância pooled
+  \cite{bishop2006}.
+
+  \item \textbf{A escolha do número de componentes $J$ é crítica.}
+  Usar $J=3$ foi adequado para o Artificial~I mas potencialmente excessivo para datasets
+  com classes unimodais (Íris) ou de alta dimensão (Dermatology, Breast Cancer). Uma
+  seleção de $J$ por validação cruzada, como proposto na metodologia, é necessária para
+  equilibrar expressividade e generalização \cite{theodoridis2009}.
+
+  \item \textbf{O DMC apresentou o pior desempenho consistente.}
+  Em todos os datasets, o DMC ficou na última posição ou próximo dela, confirmando sua
+  limitação a classes com geometria esférica e bem separadas. A hipótese
+  $\boldsymbol{\Sigma}_i = \sigma^2 \mathbf{I}$ é excessivamente restritiva para dados
+  reais \cite{duda2001}.
+
+\end{enumerate}
+
+Em síntese, o GMM-Bayes representa um passo natural além dos classificadores Bayesianos
+gaussianos clássicos, oferecendo maior flexibilidade para representar densidades multimodais.
+Contudo, essa flexibilidade tem custo: demanda mais dados por classe e um procedimento
+cuidadoso de seleção de hiperparâmetros. Em cenários de baixa dimensão com dados multimodais,
+é competitivo ou superior a QDA e LDA; em alta dimensão, regularização e modelos mais
+parcimoniosos tendem a generalizar melhor.

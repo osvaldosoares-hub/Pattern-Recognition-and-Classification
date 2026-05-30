@@ -1,0 +1,31 @@
+TRABALHO 5 - IRIS - GMM-BAYES
+============================================================
+
+GMM-Bayes:
+  Acurácia média: 0.9533
+  Desvio padrão : 0.0414
+  Mín/Máx       : 0.8333 / 1.0000
+
+LDA:
+  Acurácia média: 0.9833
+  Desvio padrão : 0.0197
+  Mín/Máx       : 0.9333 / 1.0000
+
+QDA:
+  Acurácia média: 0.9783
+  Desvio padrão : 0.0242
+  Mín/Máx       : 0.9333 / 1.0000
+
+KNN:
+  Acurácia média: 0.9583
+  Desvio padrão : 0.0207
+  Mín/Máx       : 0.9333 / 1.0000
+
+DMC:
+  Acurácia média: 0.8683
+  Desvio padrão : 0.0488
+  Mín/Máx       : 0.7667 / 0.9667
+
+Escolha da matriz de confusão:
+Realização 3 escolhida por maior acurácia do GMM-Bayes (1.0000), com margem local 1.0000 sobre o melhor concorrente na iteração.
+Par de atributos para superfície: petal length x petal width

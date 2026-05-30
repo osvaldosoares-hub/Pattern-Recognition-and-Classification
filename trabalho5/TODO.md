@@ -1,0 +1,7 @@
+- [x] Ler o arquivo gmm_bayes.py completo para preparar edição segura
+- [x] Implementar classe de GMM com EM explícito (E-step e M-step)
+- [x] Integrar GMM explícito ao GMMBayesClassifier
+- [x] Manter compatibilidade com interface atual (fit, predict, predict_proba, score)
+- [x] Atualizar bloco de teste __main__ se necessário
+- [x] Validar execução básica (teste de caminho crítico)
+- [x] Atualizar TODO.md marcando etapas concluídas
