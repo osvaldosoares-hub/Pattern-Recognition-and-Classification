@@ -1,0 +1,31 @@
+TRABALHO 6 - DERMATOLOGY - PARZEN BAYES
+============================================================
+Fonte dos dados: C:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\dermatology\dermatology.data
+
+ParzenBayes:
+  Acurácia média: 0.9042
+  Desvio padrão : 0.0244
+  Mín/Máx       : 0.8472 / 0.9444
+
+LDA:
+  Acurácia média: 0.9694
+  Desvio padrão : 0.0168
+  Mín/Máx       : 0.9306 / 0.9861
+
+QDA:
+  Acurácia média: 0.3056
+  Desvio padrão : 0.0000
+  Mín/Máx       : 0.3056 / 0.3056
+
+KNN:
+  Acurácia média: 0.9632
+  Desvio padrão : 0.0166
+  Mín/Máx       : 0.9167 / 0.9861
+
+DMC:
+  Acurácia média: 0.9625
+  Desvio padrão : 0.0216
+  Mín/Máx       : 0.9167 / 1.0000
+
+Escolha da matriz de confusão:
+Realização 12 escolhida por maior acurácia do Parzen-Bayes (0.9444), com margem local 0.9444.

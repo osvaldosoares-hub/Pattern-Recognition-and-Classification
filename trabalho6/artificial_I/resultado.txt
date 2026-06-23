@@ -1,0 +1,30 @@
+TRABALHO 6 - ARTIFICIAL I - PARZEN BAYES
+============================================================
+
+ParzenBayes:
+  Acurácia média: 1.0000
+  Desvio padrão : 0.0000
+  Mín/Máx       : 1.0000 / 1.0000
+
+LDA:
+  Acurácia média: 1.0000
+  Desvio padrão : 0.0000
+  Mín/Máx       : 1.0000 / 1.0000
+
+QDA:
+  Acurácia média: 1.0000
+  Desvio padrão : 0.0000
+  Mín/Máx       : 1.0000 / 1.0000
+
+KNN:
+  Acurácia média: 1.0000
+  Desvio padrão : 0.0000
+  Mín/Máx       : 1.0000 / 1.0000
+
+DMC:
+  Acurácia média: 1.0000
+  Desvio padrão : 0.0000
+  Mín/Máx       : 1.0000 / 1.0000
+
+Matriz de confusão (realização escolhida):
+Realização 1 escolhida por apresentar a maior acurácia do Parzen-Bayes (1.0000). Margem parcial observada para os demais métodos: 1.0000.

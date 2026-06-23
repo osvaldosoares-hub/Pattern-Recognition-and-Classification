@@ -1,0 +1,32 @@
+TRABALHO 6 - VERTEBRAL - PARZEN BAYES
+============================================================
+Fonte dos dados: C:\Users\osval\OneDrive\Área de Trabalho\mestrado\ML\trabalho4\vertebral\column_3C.dat
+
+ParzenBayes:
+  Acurácia média: 0.7750
+  Desvio padrão : 0.0496
+  Mín/Máx       : 0.6935 / 0.8548
+
+LDA:
+  Acurácia média: 0.7798
+  Desvio padrão : 0.0448
+  Mín/Máx       : 0.6613 / 0.8710
+
+QDA:
+  Acurácia média: 0.8323
+  Desvio padrão : 0.0393
+  Mín/Máx       : 0.7419 / 0.8871
+
+KNN:
+  Acurácia média: 0.7734
+  Desvio padrão : 0.0336
+  Mín/Máx       : 0.6935 / 0.8387
+
+DMC:
+  Acurácia média: 0.7347
+  Desvio padrão : 0.0521
+  Mín/Máx       : 0.6290 / 0.8226
+
+Escolha da matriz de confusão:
+Realização 1 escolhida por maior acurácia do Parzen-Bayes (0.8548), com margem local 0.8548.
+Par de atributos para superfície: pelvic_incidence x lumbar_lordosis_angle
